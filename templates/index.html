@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+                          initial-scale=1">
+    <title>Report</title>
+</head>
+<body>
+<h1>Report Title</h1>
+<p>Report info</p>
+{% if img.graph_result1 %}
+<img src={{img.graph_result1}} width="500px" height="100%"/>
+{% else %}
+<p>No image for report was generated</p>
+{% endif %}
+</body>
+</html>
