@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+                          initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='icon/favicon.ico') }}"/>
+    <title>Report</title>
+</head>
+<body>
+<h1>Report Title</h1>
+<div class="img_container">
+    <p>Report info</p>
+    <div class="img_block">
+        {% if img.main_classification %}
+        <img src={{img.main_classification}} width="500px" height="100%"/>
+        {% else %}
+        <p>No image main_classification for report was generated</p>
+        {% endif %}
+    </div>
+    <div class="img_block">
+        {% if img.confusion_matrix %}
+        <img src={{img.confusion_matrix}} width="500px" height="100%"/>
+        {% else %}
+        <p>No image confusion_matrix for report was generated</p>
+        {% endif %}
+    </div>
+    <div class="img_block">
+        {% if img.classification_reporter %}
+        <img src={{img.classification_reporter}} width="500px" height="100%"/>
+        {% else %}
+        <p>No image classification_reporter for report was generated</p>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

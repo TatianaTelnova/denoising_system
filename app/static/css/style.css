@@ -1,0 +1,9 @@
+.img_container {
+    display: flex;
+    flex-direction: column;
+}
+
+.img_block {
+    display: flex;
+    justify-content: center;
+}
