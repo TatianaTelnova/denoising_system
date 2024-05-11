@@ -1,10 +1,9 @@
 import torch
 
-from abc import ABC
 from torch.nn import Module, BatchNorm2d, Conv2d, ConvTranspose2d
 
 
-class Swish(torch.autograd.Function, ABC):
+class Swish(torch.autograd.Function):
     """
     This class implements the Swish activation function.
     """

@@ -19,7 +19,7 @@ def calculate_prediction(prediction_model: torch.nn.Module, label_tensor: torch.
     :param img_tensor: (tensor) input image
     :return: file name in temp_dir
     """
-    temp_dir_path = pathlib.Path('./temp_prediction')
+    temp_dir_path = pathlib.Path('temp_prediction')
     output = prediction_model(img_tensor)
     if not temp_dir_path.exists():
         temp_dir_path.mkdir(parents=True)
@@ -34,7 +34,7 @@ def prepare_img_for_report() -> None:
     """
     The method prepares the image for the report.
     """
-    file_main = [file_path for file_path in next(os.walk('./temp_prediction/'))[2] if file_path.endswith('.pckl')][-1]
+    file_main = [file_path for file_path in next(os.walk('temp_prediction/'))[2] if file_path.endswith('.pckl')][-1]
     with open('./temp_prediction/' + file_main, 'rb') as f:
         data = pickle.load(f)
     plot_main_classification(data['accuracy'], 0)

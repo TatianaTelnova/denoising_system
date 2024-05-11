@@ -18,7 +18,7 @@ def get_classifier_label(img_filename: str, with_preprocessing: bool = True) -> 
         if with_preprocessing:
             img_tensor = get_tensor_preprocess(img_tensor)
         # классификация
-        model = ClassificationModel(is_custom_pretrained=True)
+        model = ClassificationModel(is_custom_pretrained=True).model
         out = model.predict(img_tensor)
         return Label(out).name
     else:

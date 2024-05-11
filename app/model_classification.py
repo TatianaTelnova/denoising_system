@@ -19,5 +19,5 @@ class ClassificationModel:
         model = models.vgg16(weights=VGG16_Weights.DEFAULT)
         model.classifier[6] = Linear(4096, 7)
         if is_custom_pretrained:
-            model.load_state_dict(torch.load('./model/model_210324.pth'))
+            model.load_state_dict(torch.load('model/model_210324.pth'))
         self.model = model.to('cpu').eval()
