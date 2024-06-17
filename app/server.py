@@ -1,4 +1,5 @@
 import os
+from itertools import groupby
 
 from flask import Flask, render_template
 
@@ -10,29 +11,19 @@ app.config["UPLOAD_FOLDER"] = IMG_FOLDER
 
 def get_img_filename(file_templates: tuple[str, str, str]) -> tuple[str, str, str]:
     """
-    The method is used to get the files name of the images.
+    The method is used to get the last files name of the images.
     :param file_templates: tuple[str, str, str] of the files name patterns
     :return: tuple[str, str, str] of the files name
     """
-    main_classification = None
-    confusion_matrix = None
-    classification_reporter = None
-    paths = sorted(next(os.walk(IMG_FOLDER))[2])
-    count = len(paths) - 1
-    for i in range(count):
-        if (main_classification is None) & (paths[count - i].startswith(file_templates[0])) & \
-                (paths[count - i].endswith('.jpg')):
-            main_classification = paths[count - i]
-            continue
-        if (confusion_matrix is None) & (paths[count - i].startswith(file_templates[1])) & \
-                (paths[count - i].endswith('.jpg')):
-            confusion_matrix = paths[count - i]
-            continue
-        if (classification_reporter is None) & (paths[count - i].startswith(file_templates[2])) & \
-                (paths[count - i].endswith('.jpg')):
-            classification_reporter = paths[count - i]
-            continue
-    return main_classification, confusion_matrix, classification_reporter
+    file_name = {file_templates[0]: None, file_templates[1]: None, file_templates[2]: None}
+    paths = next(os.walk(IMG_FOLDER))[2]
+    grouped_files = [sorted(list(g))[-1] for k, g in
+                     groupby(paths, key=lambda k: k.rpartition('_')[0].rpartition('_')[0])]
+    for template in file_templates:
+        files_filter = [file_name for file_name in grouped_files if file_name.startswith(template)]
+        if len(files_filter) != 0:
+            file_name[template] = files_filter[0]
+    return file_name[file_templates[0]], file_name[file_templates[1]], file_name[file_templates[2]]
 
 
 @app.route('/')

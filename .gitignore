@@ -1,5 +1,5 @@
 /.idea/
 /tests/.pytest_cache/
-/app/model/
-/app/temp_prediction/
-/app/static/img/
+/app_old/model/
+/app_old/temp_prediction/
+/app_old/static/img/
