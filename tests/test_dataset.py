@@ -67,9 +67,9 @@ class TestAdvDataset:
         with allure.step(f"get '{dataset}' dataset"):
             dataset_obj = request.getfixturevalue(dataset)
         with allure.step(f"check '{dataset}' length with {count} items"):
-            assert dataset_obj.__len__() == count
+            assert len(dataset_obj) == count
         with allure.step(f"get '{dataset}' item with index {rand_idx}"):
-            item = dataset_obj.__getitem__(rand_idx)
+            item = dataset_obj[rand_idx]
         with allure.step("check item data is 'tuple[int, torch.Tensor(), torch.Tensor, str]'"):
             assert (item[0] == label)
             assert (item[1].dtype == torch.float32) & (item[1].shape == (3, 200, 200))
@@ -117,7 +117,7 @@ class TestAdvDataset:
                 label_list += [item[0] for _ in range(item[1])]
                 count += item[1]
         with allure.step(f"get '{dataset}' dataset"):
-            data = request.getfixturevalue(dataset).get_sample(count)
+            data = request.getfixturevalue(dataset).get_samples(count)
         with allure.step(f"check sample data is 'tuple[list[int], torch.Tensor, torch.Tensor, list[str]]'"):
             assert (data[0] == label_list)
             assert (data[1].dtype == torch.float32) & (tuple(data[1].size()) == (count, 3, 200, 200))
@@ -206,9 +206,9 @@ class TestAdvImgDataset:
         with allure.step(f"get '{dataset}' dataset"):
             data = request.getfixturevalue(dataset)
         with allure.step(f"check '{dataset}' length with {count} items"):
-            assert data.__len__() == count
+            assert len(data) == count
         with allure.step(f"get '{dataset}' item with index {rand_idx}"):
-            item = data.__getitem__(rand_idx)
+            item = data[rand_idx]
         with allure.step("check item data is 'tuple[int, torch.Tensor, str]'"):
             assert (item[0] == label)
             assert (item[1].dtype == torch.float32) & (item[1].shape == (3, 200, 200))
@@ -255,7 +255,7 @@ class TestAdvImgDataset:
                 label_tensor = torch.cat((label_tensor, torch.tensor([item[0] for _ in range(item[1])])), dim=0)
                 count += item[1]
         with allure.step(f"get '{dataset}' dataset"):
-            data = request.getfixturevalue(dataset).get_sample(count)
+            data = request.getfixturevalue(dataset).get_samples(count)
         with allure.step("check sample data is 'tuple[list[int], torch.Tensor, torch.Tensor, list[str]]'"):
             assert (sum(data[0] == label_tensor) == count)
             assert (data[1].dtype == torch.float32) & (tuple(data[1].size()) == (count, 3, 200, 200))

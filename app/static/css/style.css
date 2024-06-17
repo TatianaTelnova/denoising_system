@@ -1,9 +1,10 @@
 .img_container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 .img_block {
-    display: flex;
-    justify-content: center;
+    //display: flex;
+    //justify-content: center;
+    //flex-direction: row;
 }

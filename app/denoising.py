@@ -1,56 +1,76 @@
 import os
+import pickle
+from log_config import setup_custom_logger
+
 import torch
+from foolbox import Attack, models
 
-from dataset import AdvDataset
-from img_client import img_list_to_tensor
-from model_classification import ClassificationModel
-from server import app
+from app.dataset import AdvImgDataset, AdvDataset
 
-
-def get_predict_accuracy(model, img_input: torch.Tensor, label: torch.Tensor):
-    output = model(img_input)
-    _, predict = torch.max(output, dim=1)
-    return float(torch.sum(predict == label) / label.size(dim=0))
+logger = setup_custom_logger(__name__)
 
 
-def check_noise_immunity(model, adv_dataset: list[tuple]):
-    img_clean_input = img_list_to_tensor([item[0] for item in adv_dataset])
-    img_adv_input = img_list_to_tensor([item[1] for item in adv_dataset])
-    img_label = torch.IntTensor([item[2] for item in adv_dataset])
-    print(get_predict_accuracy(model, img_clean_input, img_label),
-          get_predict_accuracy(model, img_adv_input, img_label))
+def get_noise_dataset(model: torch.nn.Module, attack: Attack, dataset: AdvImgDataset, epsilon=1):
+    """
+    Returns object AdvDataset with noise examples
+    :param model: prediction model
+    :param attack: attack
+    :param dataset: clean image dataset
+    :param epsilon: parameter of noise size
+    :return: AdvDataset with noise examples
+    """
+    fool_model = models.PyTorchModel(model, bounds=(0, 1))
+    data = dataset.get_all()
+    _, clipped, is_adv = attack(fool_model, data[1], data[0].long(), epsilons=epsilon)
+    previous_count = 0
+    for label, img_path in zip(dataset.label_list, dataset.img_list):
+        current_count = previous_count + dataset.get_count_for_class(label)
+        clipped_data = clipped[previous_count:current_count]
+        is_adv_data = is_adv[previous_count:current_count]
+        logger.info(f"Для класса {img_path.rpartition('/')[-1]}:")
+        with open(f'{img_path}_clean.pkl', 'wb') as f:
+            pickle.dump(data[1][previous_count:current_count], f)
+            logger.info(f"класс '{img_path.rpartition('/')[-1]}': оригинальные изображения в '{img_path}_clean.pkl'")
+        with open(f'{img_path}_clipped.pkl', 'wb') as f:
+            pickle.dump(clipped_data, f)
+            logger.info(f"класс '{img_path.rpartition('/')[-1]}': изображения с шумом '{type(attack).__name__}' в "
+                        f"'{img_path}_clipped.pkl'")
+        with open(f'{img_path}_is_adv.pkl', 'wb') as f:
+            pickle.dump(is_adv_data, f)
+            logger.info(f"класс '{img_path.rpartition('/')[-1]}': инфо 'является негативным объектом' в "
+                        f"'{img_path}_is_adv.pkl'")
+        with open(f'{img_path}_label.pkl', 'wb') as f:
+            pickle.dump([img_path + '/' + file_name for file_name in next(os.walk(img_path))[2]], f)
+            logger.info(f"класс '{img_path.rpartition('/')[-1]}': полное название файла в '{img_path}_label.pkl'")
+        previous_count = current_count
+    return AdvDataset(
+        label_list=dataset.label_list,
+        clean_list=[f'{img_path}_clean.pkl' for img_path in dataset.img_list],
+        adv_list=[f'{img_path}_clipped.pkl' for img_path in dataset.img_list],
+        filename_list=[f'{img_path}_label.pkl' for img_path in dataset.img_list]
+    )
 
 
-def get_data_file_name(root_directory, class_name, pattern_filename):
-    files = [all_files for all_files in next(os.walk(root_directory + class_name))[2] if
-             all_files.endswith(pattern_filename)]
-    assert len(files) == 1
-    return root_directory + class_name + '/' + files[0]
-
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=3000, debug=True)
-    # root_directory = 'D:/noise/data/adv/deepfool_tensor/'
-    # clean_file = '_clean1.pckl'
-    # adv_file = '_adv.pckl'
-    # label_file = '_label.pckl'
-    #
-    # class_names = next(os.walk(root_directory))[1]
-    # clean_list = []
-    # adv_list = []
-    # filename_list = []
-    # for img_class in class_names:
-    #     clean_list.append(get_data_file_name(root_directory, img_class, clean_file))
-    #     adv_list.append(get_data_file_name(root_directory, img_class, adv_file))
-    #     filename_list.append(get_data_file_name(root_directory, img_class, label_file))
-    # dataset_adv = {
-    #     'train': AdvDataset(
-    #         clean_list=clean_list,
-    #         adv_list=adv_list,
-    #         filename_list=filename_list
-    #     )
-    # }
-    # label, clean_tensor, adv_tensor, _ = dataset_adv.get('train').get_all()
-    # model = ClassificationModel(is_custom_pretrained=True).model
-    # print(get_predict_accuracy(model, clean_tensor, torch.IntTensor(label)),
-    #       get_predict_accuracy(model, adv_tensor, torch.IntTensor(label)))
+def get_denoising_dataset(model: torch.nn.Module, dataset: AdvDataset):
+    """
+    Returns object AdvDataset with denoising examples
+    :param model: desoining model
+    :param dataset: AdvDataset with noise examples
+    :return: AdvDataset with denoising examples
+    """
+    all_adv_data = dataset.get_all()
+    denoising_data = model(all_adv_data[2])
+    previous_count = 0
+    for label, img_path in zip(dataset.label_list, dataset.clean_list):
+        current_count = previous_count + dataset.get_count_for_class(label)
+        img_file_name = img_path.rpartition('_')[0]
+        with open(f'{img_file_name}_denoising.pkl', 'wb') as f:
+            pickle.dump(denoising_data[previous_count:current_count], f)
+            logger.info(f"Класс '{img_file_name.rpartition('/')[-1]}': изображения после шумоподавления в "
+                        f"'{img_file_name}_denoising.pkl'")
+        previous_count = current_count
+    return AdvDataset(
+        label_list=dataset.label_list,
+        clean_list=dataset.clean_list,
+        adv_list=[f'{img_path.rpartition("_")[0]}_denoising.pkl' for img_path in dataset.clean_list],
+        filename_list=dataset.filename_list)

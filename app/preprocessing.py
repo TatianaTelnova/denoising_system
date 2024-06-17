@@ -1,10 +1,8 @@
-from torch import tensor
+import os
+from itertools import groupby
+
 from torchvision import transforms
 from typing import Final
-
-from PIL import Image
-
-from model_autoencoder import Autoencoder
 
 PREPROCESSING_TRANSFORM: Final = transforms.Compose([
     transforms.Resize(200),
@@ -12,29 +10,31 @@ PREPROCESSING_TRANSFORM: Final = transforms.Compose([
 ])
 
 
-def get_img_transform(img: Image) -> tensor:
+def delete_old_files(limit: int, file_dir: str):
     """
-    Transforms an Image object into a tensor with size (3x200x200).
-    :param img: Image object
-    :return: tensor 200x200
+    Deletes the oldest files in the given folder if it exceeds the given limit
+    :param limit: the maximum number of files
+    :param file_dir: the directory path
     """
-    return PREPROCESSING_TRANSFORM(img)
+    all_files = [file_dir + file_name for file_name in next(os.walk(file_dir))[2]]
+    if len(all_files) > limit:
+        count = (len(all_files) - limit) // 3 + 1
+        old_plt_list = [sorted(list(g))[0:count] for k, g in
+                        groupby(all_files, key=lambda k: k.rpartition('_')[0].rpartition('_')[0])]
+        for old_file in old_plt_list:
+            for file in old_file:
+                os.remove(file)
 
 
-def get_tensor_by_img(img: Image) -> tensor:
+def find_files_in_dir(dir_path: str, ext: str):
     """
-    Transforms an Image object into a tensor with size (1x3x200x200).
-    :param img: Image object
-    :return: tensor 1x3x200x200
+    Returns a list of all files in the given directory or None if no files are found
+    :param dir_path: path to the directory
+    :param ext: file extension
+    :return: list of all files
     """
-    return get_img_transform(img).unsqueeze(0)
-
-
-def get_tensor_preprocess(img_tensor: tensor) -> tensor:
-    """
-    Preprocesses a tensor to delete noise.
-    :param img_tensor: image tensor
-    :return: de-noised image tensor
-    """
-    autoencoder = Autoencoder()
-    return autoencoder(img_tensor)
+    list_of_files = [file_path for file_path in next(os.walk(dir_path))[2] if file_path.endswith(ext)]
+    if len(list_of_files) == 0:
+        return None
+    else:
+        return [dir_path + file_name for file_name in list_of_files]

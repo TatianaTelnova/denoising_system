@@ -1,14 +1,14 @@
 import enum
 
 
-class Label(enum.Enum):
+class Label(enum.IntEnum):
     """
     Enum for the label for classification.
     """
-    bowl = 0
-    car = 1
-    cat = 2
-    dog = 3
-    giraffe = 4
-    person = 5
-    train = 6
+    Bowl = 0
+    Car = 1
+    Cat = 2
+    Dog = 3
+    Giraffe = 4
+    Person = 5
+    Train = 6
